@@ -28,23 +28,31 @@
 void
 usage(void)
 {
-	fprintf(stderr, "devmux: [-d <file>] [-i <file>] [-o <file>]\n");
+	fprintf(stderr, "devmux [-d <device>] [-i <file>] [-o <file>]\n");
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc, char**argv)
 {
+	/* file and device stuff */
 	char *dev_path = "/dev/l4pipe0";
 	char *in_path = "in";
 	char *out_path = "out";
+	int dev_fd, in_fd, out_fd;
+
+	/* internal buffer stuff */
 	char in_buf[BUFSIZ];
 	char out_buf[BUFSIZ];
+	ssize_t in_buf_size = 0;
+	ssize_t out_buf_size = 0;
+	ssize_t in_off = 0;
+	ssize_t out_off = 0;
+
+	/* event management stuff */
 	struct kevent kev[3];
-	int dev_fd, in_fd, out_fd;
 	int ch, kq;
 	struct kevent *in_queue = &kev[0];
 	struct kevent *out_queue = &kev[1];
-
 	struct kevent *changelist = &kev[0];
 	struct kevent *event = &kev[2];
 
@@ -86,11 +94,6 @@ int main(int argc, char**argv)
 	if ((kq = kqueue()) < 0)
 		err(EXIT_FAILURE, "kqueue");
 
-	ssize_t in_buf_size = 0;
-	ssize_t out_buf_size = 0;
-	ssize_t in_off = 0;
-	ssize_t out_off = 0;
-
 	for(;;) {
 		/* define events for this round */
 		if (in_buf_size == 0)	
@@ -116,19 +119,20 @@ int main(int argc, char**argv)
 
 		/* write data to device */
 		if (event->ident == dev_fd && event->filter == EVFILT_WRITE) {
-			in_off -= write(dev_fd, in_buf, in_buf_size);
+			in_off += write(dev_fd, in_buf, in_buf_size);
 			in_buf_size -= in_off;
 		}
 
 		/* read data from in file */
 		if (event->ident == in_fd && in_buf_size == 0) {
 			in_buf_size = read(in_fd, in_buf, BUFSIZ);
-			in_buf_size -= write(dev_fd, in_buf, in_buf_size);
+			in_off = write(dev_fd, in_buf, in_buf_size);
+			in_buf_size -= in_off;
 		}
 
 		/* write data to out file */
 		if (event->ident == out_fd) {
-			out_off -= write(out_fd, out_buf + out_off, out_buf_size);
+			out_off += write(out_fd, out_buf + out_off, out_buf_size);
 			out_buf_size -= out_off;
 		}
 	}
