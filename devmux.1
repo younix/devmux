@@ -1,0 +1,31 @@
+.Dd $Mdocdate$
+.Dt DEVMUX 1
+.Os
+.Sh NAME
+.Nm devmux
+.Nd multiplexes devices into to fifo files
+.\" .Sh LIBRARY
+.\" For sections 2, 3, & 9 only.
+.\" Not used in OpenBSD.
+.Sh SYNOPSIS
+.Nm
+.Op Fl d Ar device
+.Op Fl i Ar file
+.Op Fl o Ar file
+.Sh DESCRIPTION
+The
+.Nm
+utility mulitplexes device access into an intput and output fifo file.
+Two processes for write and read can access a device file, which only could
+open by one process per time.
+.\" .Sh FILES
+.\" .Sh EXIT STATUS
+.\" For sections 1, 6, & 8 only.
+.\" .Sh EXAMPLES
+.Sh SEE ALSO
+.Xr cat 1
+.Xr echo 1
+.Xr tail 1
+.Sh AUTHORS
+.Nm
+was written by Jan Klemkow.
